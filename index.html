@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cafedis Menu</title>
 
-  <link rel="preload" href="menu.pdf" as="document">
+  <link rel="preload" href="https://example.com/menu.pdf" as="document">
 
   <style>
     * {
@@ -99,23 +99,23 @@
 </head>
 <body>
 
-  <!-- CAFEDIS Animated Loader -->
+  <!-- CAFEDIS Animated Loader (always shows first) -->
   <div id="loader" class="cafedis-loader" aria-label="CAFEDİS yükleniyor">
     <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
   </div>
 
-  <!-- Native PDF Viewer (attempt both mobile + desktop) -->
+  <!-- PDF iframe (desktop or mobile with Drive viewer) -->
   <iframe
     id="pdfFrame"
     class="pdf-frame"
-    src="menu.pdf#toolbar=1&navpanes=0&scrollbar=1"
+    src=""
     allowfullscreen
   ></iframe>
 
-  <!-- Fallback for devices that block inline PDFs -->
+  <!-- Fallback error message -->
   <div class="error-message" id="errorMessage">
     <p>⚠️ PDF görüntülenemedi veya desteklenmiyor.</p>
-    <p><a href="menu.pdf" target="_blank" rel="noopener">Menüyü açmak veya indirmek için buraya tıklayın</a></p>
+    <p><a href="https://cafedis.github.io/menu/menu.pdf" target="_blank" rel="noopener">Menüyü açmak veya indirmek için tıklayın</a></p>
   </div>
 
   <script>
@@ -123,19 +123,26 @@
     const frame = document.getElementById("pdfFrame");
     const errorMessage = document.getElementById("errorMessage");
 
-    // Try loading PDF
+    const pdfUrl = "https://example.com/menu.pdf";
+    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+
+    const driveViewerUrl = "https://drive.google.com/viewerng/viewer?embedded=true&url=" + encodeURIComponent(pdfUrl);
+    const nativePdfUrl = pdfUrl + "#toolbar=1&navpanes=0&scrollbar=1";
+
+    // Choose URL depending on device
+    frame.src = isMobile ? driveViewerUrl : nativePdfUrl;
+
     frame.onload = () => {
       loader.style.display = "none";
       frame.style.display = "block";
     };
 
-    // In case PDF fails to load
     frame.onerror = () => {
       loader.style.display = "none";
       errorMessage.style.display = "block";
     };
 
-    // Extra fallback check: if iframe stays empty (iOS or blocked)
+    // Fallback check (some devices silently fail)
     setTimeout(() => {
       try {
         const doc = frame.contentDocument || frame.contentWindow?.document;
@@ -145,12 +152,11 @@
           errorMessage.style.display = "block";
         }
       } catch (e) {
-        // Cross-origin fallback (some mobile devices)
         loader.style.display = "none";
         frame.style.display = "none";
         errorMessage.style.display = "block";
       }
-    }, 4000); // wait max 4s
+    }, 4000);
   </script>
 
 </body>
