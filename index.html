@@ -1,163 +1,156 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cafedis Menu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafedis Menu</title>
 
-  <link rel="preload" href="https://example.com/menu.pdf" as="document">
+    <!-- Preload PDF for Desktop -->
+    <link rel="preload" href="menu.pdf" as="document">
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      background-color: #1c1c1c;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #c08f64;
-      overflow: hidden;
-    }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .cafedis-loader {
-      display: flex;
-      gap: 8px;
-      font-size: 48px;
-      font-weight: bold;
-      color: #c08f64;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-    }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: relative;
+        }
 
-    .cafedis-loader span {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: bounceIn 0.6s forwards;
-    }
+        /* Loader Styling */
+        #loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            color: #333;
+            z-index: 999;
+        }
 
-    .cafedis-loader span:nth-child(1) { animation-delay: 0s; }
-    .cafedis-loader span:nth-child(2) { animation-delay: 0.1s; }
-    .cafedis-loader span:nth-child(3) { animation-delay: 0.2s; }
-    .cafedis-loader span:nth-child(4) { animation-delay: 0.3s; }
-    .cafedis-loader span:nth-child(5) { animation-delay: 0.4s; }
-    .cafedis-loader span:nth-child(6) { animation-delay: 0.5s; }
-    .cafedis-loader span:nth-child(7) { animation-delay: 0.6s; }
+        .pdf-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: none;
+            overflow: auto;
+        }
 
-    @keyframes bounceIn {
-      0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.8);
-      }
-      60% {
-        opacity: 1;
-        transform: translateY(-10px) scale(1.05);
-      }
-      100% {
-        transform: translateY(0) scale(1);
-      }
-    }
+        canvas {
+            width: 100%;
+            height: auto;
+        }
 
-    .pdf-frame {
-      display: none;
-      width: 100%;
-      height: 100%;
-      border: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
-    }
+        /* Error message when PDF fails to load */
+        .error-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
 
-    .error-message {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #ffd700;
-      text-align: center;
-      z-index: 20;
-    }
+        .error-message a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-    .error-message a {
-      color: #ffcc00;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .error-message a:hover {
-      text-decoration: underline;
-    }
-  </style>
+        .error-message a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- CAFEDIS Animated Loader (always shows first) -->
-  <div id="loader" class="cafedis-loader" aria-label="CAFEDİS yükleniyor">
-    <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
-  </div>
+    <!-- Loader while PDF is loading -->
+    <div id="loader">Yükleniyor...</div>
 
-  <!-- PDF iframe (desktop or mobile with Drive viewer) -->
-  <iframe
-    id="pdfFrame"
-    class="pdf-frame"
-    src=""
-    allowfullscreen
-  ></iframe>
+    <!-- PDF Container (Hidden initially) -->
+    <div class="pdf-container" id="pdfContainer"></div>
 
-  <!-- Fallback error message -->
-  <div class="error-message" id="errorMessage">
-    <p>⚠️ PDF görüntülenemedi veya desteklenmiyor.</p>
-    <p><a href="https://cafedis.github.io/menu/menu.pdf" target="_blank" rel="noopener">Menüyü açmak veya indirmek için tıklayın</a></p>
-  </div>
+    <!-- Error Message (Hidden by Default) -->
+    <div class="error-message" id="errorMessage">
+        <p>⚠️ Unable to load the PDF.</p>
+        <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
+    </div>
 
-  <script>
-    const loader = document.getElementById("loader");
-    const frame = document.getElementById("pdfFrame");
-    const errorMessage = document.getElementById("errorMessage");
+    <script>
+        // Show the loader while the document is loading
+        window.onload = function() {
+            document.getElementById("loader").style.display = "block";
+            loadPDF();
+        };
 
-    const pdfUrl = "https://example.com/menu.pdf";
-    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+        // Load PDF using PDF.js
+        function loadPDF() {
+            const url = 'menu.pdf'; // Path to the PDF file
+            const pdfContainer = document.getElementById("pdfContainer");
 
-    const driveViewerUrl = "https://drive.google.com/viewerng/viewer?embedded=true&url=" + encodeURIComponent(pdfUrl);
-    const nativePdfUrl = pdfUrl + "#toolbar=1&navpanes=0&scrollbar=1";
+            // Fetch the PDF document
+            pdfjsLib.getDocument(url).promise
+                .then(pdf => {
+                    const totalPages = pdf.numPages;
 
-    // Choose URL depending on device
-    frame.src = isMobile ? driveViewerUrl : nativePdfUrl;
+                    // Loop through each page and render it on a canvas
+                    let currentPage = 1;
 
-    frame.onload = () => {
-      loader.style.display = "none";
-      frame.style.display = "block";
-    };
+                    function renderPage(pageNum) {
+                        pdf.getPage(pageNum).then(page => {
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext('2d');
+                            const viewport = page.getViewport({ scale: 1.5 });
 
-    frame.onerror = () => {
-      loader.style.display = "none";
-      errorMessage.style.display = "block";
-    };
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
 
-    // Fallback check (some devices silently fail)
-    setTimeout(() => {
-      try {
-        const doc = frame.contentDocument || frame.contentWindow?.document;
-        if (!doc || !doc.body || doc.body.innerHTML.trim() === "") {
-          loader.style.display = "none";
-          frame.style.display = "none";
-          errorMessage.style.display = "block";
+                            page.render({
+                                canvasContext: context,
+                                viewport: viewport
+                            }).promise.then(() => {
+                                pdfContainer.appendChild(canvas);
+                                currentPage++;
+                                if (currentPage <= totalPages) {
+                                    renderPage(currentPage);
+                                } else {
+                                    document.getElementById("loader").style.display = "none"; // Hide loader once done
+                                    pdfContainer.style.display = "block"; // Show PDF container
+                                }
+                            }).catch(() => {
+                                showError();
+                            });
+                        });
+                    }
+
+                    // Start rendering from the first page
+                    renderPage(currentPage);
+                })
+                .catch(() => {
+                    showError();
+                });
         }
-      } catch (e) {
-        loader.style.display = "none";
-        frame.style.display = "none";
-        errorMessage.style.display = "block";
-      }
-    }, 4000);
-  </script>
+
+        function showError() {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("errorMessage").style.display = "block";
+        }
+    </script>
 
 </body>
 </html>
