@@ -23,20 +23,19 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #1c1c1c; /* Charcoal */
+      background-color: #1c1c1c;
       overflow: hidden;
       position: relative;
-      color: #c08f64; /* Gold text for defaults */
+      color: #c08f64;
     }
 
-    /* CAFEDIS Animated Loader */
     .cafedis-loader {
       display: flex;
       gap: 8px;
       font-size: 48px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       font-weight: bold;
-      color: #c08f64; /* Gold */
+      color: #c08f64;
       position: absolute;
       top: 50%;
       left: 50%;
@@ -81,8 +80,6 @@
     }
 
     canvas {
-      width: 100%;
-      height: auto;
       display: block;
     }
 
@@ -95,7 +92,7 @@
       text-align: center;
       font-size: 18px;
       font-family: Arial, sans-serif;
-      color: #ffd700; /* Gold */
+      color: #ffd700;
     }
 
     .error-message a {
@@ -106,6 +103,28 @@
 
     .error-message a:hover {
       text-decoration: underline;
+    }
+
+    /* Text Layer Styles */
+    .textLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      color: transparent;
+      font-family: sans-serif;
+      line-height: 1;
+      white-space: pre;
+      pointer-events: none;
+    }
+
+    .textLayer span {
+      position: absolute;
+      white-space: pre;
+      transform-origin: 0 0;
+      line-height: 1;
+      color: #c08f64 !important; /* Optional: make it visible */
     }
   </style>
 </head>
@@ -141,37 +160,53 @@
 
           function renderPage(pageNum) {
             pdf.getPage(pageNum).then(page => {
-              const canvas = document.createElement("canvas");
-              const context = canvas.getContext('2d');
               const scale = window.innerWidth < 768 ? 1 : 1.5;
               const viewport = page.getViewport({ scale });
 
+              const canvas = document.createElement("canvas");
+              const context = canvas.getContext('2d');
               canvas.width = viewport.width;
               canvas.height = viewport.height;
 
-              page.render({
-                canvasContext: context,
-                viewport: viewport
-              }).promise.then(() => {
-                pdfContainer.appendChild(canvas);
-                currentPage++;
-                if (currentPage <= totalPages) {
-                  renderPage(currentPage);
-                } else {
-                  document.getElementById("loader").style.display = "none";
-                  pdfContainer.style.display = "block";
-                }
-              }).catch(() => {
-                showError();
-              });
+              const wrapper = document.createElement("div");
+              wrapper.style.position = "relative";
+              wrapper.style.width = `${viewport.width}px`;
+              wrapper.style.height = `${viewport.height}px`;
+
+              wrapper.appendChild(canvas);
+
+              page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
+                page.getTextContent().then(textContent => {
+                  const textLayerDiv = document.createElement("div");
+                  textLayerDiv.className = "textLayer";
+                  textLayerDiv.style.width = `${viewport.width}px`;
+                  textLayerDiv.style.height = `${viewport.height}px`;
+
+                  pdfjsLib.renderTextLayer({
+                    textContent: textContent,
+                    container: textLayerDiv,
+                    viewport: viewport,
+                    textDivs: []
+                  }).promise.then(() => {
+                    wrapper.appendChild(textLayerDiv);
+                    pdfContainer.appendChild(wrapper);
+
+                    currentPage++;
+                    if (currentPage <= totalPages) {
+                      renderPage(currentPage);
+                    } else {
+                      document.getElementById("loader").style.display = "none";
+                      pdfContainer.style.display = "block";
+                    }
+                  });
+                });
+              }).catch(showError);
             });
           }
 
           renderPage(currentPage);
         })
-        .catch(() => {
-          showError();
-        });
+        .catch(showError);
     }
 
     function showError() {
