@@ -15,10 +15,11 @@
       background-color: #1c1c1c;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       height: 100%;
+      width: 100%;
       overflow: hidden;
     }
 
-    /* Loader */
+    /* CAFEDIS Loader */
     .cafedis-loader {
       display: flex;
       gap: 8px;
@@ -64,20 +65,19 @@
       width: 100vw;
       height: 100vh;
       overflow-y: auto;
-      position: relative;
       display: none;
     }
 
     .pdf-page {
       margin: 16px auto;
       background: white;
-      box-shadow: 0 0 4px rgba(0,0,0,0.3);
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
     canvas {
-      width: 100%;
-      height: auto;
       display: block;
+      width: 100% !important;
+      height: auto !important;
     }
 
     .error-message {
@@ -88,6 +88,7 @@
       transform: translate(-50%, -50%);
       color: #ffd700;
       text-align: center;
+      z-index: 20;
     }
 
     .error-message a {
@@ -108,7 +109,7 @@
     <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
   </div>
 
-  <!-- PDF Canvas Pages -->
+  <!-- PDF Display -->
   <div class="pdf-container" id="pdfContainer"></div>
 
   <!-- Error Message -->
@@ -133,21 +134,24 @@
 
           function renderPage(pageNum) {
             pdf.getPage(pageNum).then(page => {
-              const scale = window.innerWidth < 768 ? 1.2 : 1.5;
               const outputScale = window.devicePixelRatio || 1;
+
+              // Get screen width and calculate scale based on PDF original width
+              const unscaledViewport = page.getViewport({ scale: 1 });
+              const desiredWidth = window.innerWidth * 0.98; // small padding
+              const scale = desiredWidth / unscaledViewport.width;
               const viewport = page.getViewport({ scale });
 
+              // Create canvas
               const canvas = document.createElement("canvas");
               const context = canvas.getContext("2d");
 
               canvas.width = viewport.width * outputScale;
               canvas.height = viewport.height * outputScale;
-              canvas.style.width = `${viewport.width}px`;
-              canvas.style.height = `${viewport.height}px`;
+              canvas.style.width = viewport.width + "px";
+              canvas.style.height = viewport.height + "px";
 
-              const transform = outputScale !== 1
-                ? [outputScale, 0, 0, outputScale, 0, 0]
-                : null;
+              const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
               page.render({
                 canvasContext: context,
