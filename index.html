@@ -10,10 +10,6 @@
 
     <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <script>
-        // Enable worker for better performance
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-    </script>
 
     <style>
         * {
@@ -32,6 +28,7 @@
             position: relative;
         }
 
+        /* Loader Styling */
         #loader {
             position: absolute;
             top: 50%;
@@ -49,17 +46,14 @@
             position: relative;
             display: none;
             overflow: auto;
-            padding: 1rem;
         }
 
         canvas {
             width: 100%;
-            max-width: 800px;
             height: auto;
-            margin: 0 auto 20px;
-            display: block;
         }
 
+        /* Error message when PDF fails to load */
         .error-message {
             display: none;
             position: absolute;
@@ -85,34 +79,43 @@
 </head>
 <body>
 
+    <!-- Loader while PDF is loading -->
     <div id="loader">Yükleniyor...</div>
 
+    <!-- PDF Container (Hidden initially) -->
     <div class="pdf-container" id="pdfContainer"></div>
 
+    <!-- Error Message (Hidden by Default) -->
     <div class="error-message" id="errorMessage">
         <p>⚠️ Unable to load the PDF.</p>
         <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
     </div>
 
     <script>
+        // Show the loader while the document is loading
         window.onload = function() {
             document.getElementById("loader").style.display = "block";
             loadPDF();
         };
 
+        // Load PDF using PDF.js
         function loadPDF() {
-            const url = 'menu.pdf';
+            const url = 'menu.pdf'; // Path to the PDF file
             const pdfContainer = document.getElementById("pdfContainer");
 
+            // Fetch the PDF document
             pdfjsLib.getDocument(url).promise
                 .then(pdf => {
                     const totalPages = pdf.numPages;
+
+                    // Loop through each page and render it on a canvas
+                    let currentPage = 1;
 
                     function renderPage(pageNum) {
                         pdf.getPage(pageNum).then(page => {
                             const canvas = document.createElement("canvas");
                             const context = canvas.getContext('2d');
-                            const viewport = page.getViewport({ scale: 1.2 }); // Lower scale for faster load
+                            const viewport = page.getViewport({ scale: 1.5 });
 
                             canvas.width = viewport.width;
                             canvas.height = viewport.height;
@@ -122,21 +125,25 @@
                                 viewport: viewport
                             }).promise.then(() => {
                                 pdfContainer.appendChild(canvas);
-
-                                // Lazy load next page after slight delay
-                                if (pageNum < totalPages) {
-                                    setTimeout(() => renderPage(pageNum + 1), 100); // tune delay as needed
+                                currentPage++;
+                                if (currentPage <= totalPages) {
+                                    renderPage(currentPage);
                                 } else {
-                                    document.getElementById("loader").style.display = "none";
-                                    pdfContainer.style.display = "block";
+                                    document.getElementById("loader").style.display = "none"; // Hide loader once done
+                                    pdfContainer.style.display = "block"; // Show PDF container
                                 }
-                            }).catch(showError);
-                        }).catch(showError);
+                            }).catch(() => {
+                                showError();
+                            });
+                        });
                     }
 
-                    renderPage(1); // Start with first page
+                    // Start rendering from the first page
+                    renderPage(currentPage);
                 })
-                .catch(showError);
+                .catch(() => {
+                    showError();
+                });
         }
 
         function showError() {
