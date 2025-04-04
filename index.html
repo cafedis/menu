@@ -1,156 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cafedis Menu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cafedis Menu</title>
 
-    <!-- Preload PDF for Desktop -->
-    <link rel="preload" href="web/menu.pdf" as="document">
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 
-    <!-- PDF.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            overflow: hidden;
-            position: relative;
-        }
+    #loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: #333;
+      z-index: 999;
+    }
 
-        /* Loader Styling */
-        #loader {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            font-family: Arial, sans-serif;
-            color: #333;
-            z-index: 999;
-        }
+    .pdf-container {
+      width: 100vw;
+      height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      display: none;
+    }
 
-        .pdf-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            display: none;
-            overflow: auto;
-        }
+    .pdf-page {
+      position: relative;
+      margin: 0 auto 16px;
+      background: white;
+      box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    }
 
-        canvas {
-            width: 100%;
-            height: auto;
-        }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
 
-        /* Error message when PDF fails to load */
-        .error-message {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            font-size: 18px;
-            font-family: Arial, sans-serif;
-            color: #333;
-        }
+    .textLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      color: transparent;
+      font-family: sans-serif;
+      line-height: 1;
+      white-space: pre;
+      pointer-events: none;
+    }
 
-        .error-message a {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .textLayer span {
+      position: absolute;
+      white-space: pre;
+      transform-origin: 0 0;
+      line-height: 1;
+      color: #000 !important;
+    }
 
-        .error-message a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    .error-message {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #333;
+      text-align: center;
+    }
+
+    .error-message a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .error-message a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
 
-    <!-- Loader while PDF is loading -->
-    <div id="loader">Yükleniyor...</div>
+  <!-- Loader -->
+  <div id="loader">Yükleniyor...</div>
 
-    <!-- PDF Container (Hidden initially) -->
-    <div class="pdf-container" id="pdfContainer"></div>
+  <!-- PDF Container -->
+  <div class="pdf-container" id="pdfContainer"></div>
 
-    <!-- Error Message (Hidden by Default) -->
-    <div class="error-message" id="errorMessage">
-        <p>⚠️ Unable to load the PDF.</p>
-        <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
-    </div>
+  <!-- Error Message -->
+  <div class="error-message" id="errorMessage">
+    <p>⚠️ PDF yüklenemedi.</p>
+    <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
+  </div>
 
-    <script>
-        // Show the loader while the document is loading
-        window.onload = function() {
-            document.getElementById("loader").style.display = "block";
-            loadPDF();
-        };
+  <script>
+    window.onload = function () {
+      document.getElementById("loader").style.display = "block";
+      loadPDF();
+    };
 
-        // Load PDF using PDF.js
-        function loadPDF() {
-            const url = 'web/menu.pdf'; // Path to the PDF file
-            const pdfContainer = document.getElementById("pdfContainer");
+    function loadPDF() {
+      const url = 'menu.pdf';
+      const container = document.getElementById('pdfContainer');
 
-            // Fetch the PDF document
-            pdfjsLib.getDocument(url).promise
-                .then(pdf => {
-                    const totalPages = pdf.numPages;
+      pdfjsLib.getDocument(url).promise
+        .then(pdf => {
+          const totalPages = pdf.numPages;
+          let currentPage = 1;
 
-                    // Loop through each page and render it on a canvas
-                    let currentPage = 1;
+          function renderPage(num) {
+            pdf.getPage(num).then(page => {
+              const scale = window.innerWidth < 768 ? 1 : 1.5;
+              const viewport = page.getViewport({ scale });
 
-                    function renderPage(pageNum) {
-                        pdf.getPage(pageNum).then(page => {
-                            const canvas = document.createElement("canvas");
-                            const context = canvas.getContext('2d');
-                            const viewport = page.getViewport({ scale: 1.5 });
+              const pageWrapper = document.createElement("div");
+              pageWrapper.className = "pdf-page";
+              pageWrapper.style.width = viewport.width + "px";
+              pageWrapper.style.height = viewport.height + "px";
 
-                            canvas.width = viewport.width;
-                            canvas.height = viewport.height;
+              // Create canvas
+              const canvas = document.createElement("canvas");
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              const context = canvas.getContext("2d");
 
-                            page.render({
-                                canvasContext: context,
-                                viewport: viewport
-                            }).promise.then(() => {
-                                pdfContainer.appendChild(canvas);
-                                currentPage++;
-                                if (currentPage <= totalPages) {
-                                    renderPage(currentPage);
-                                } else {
-                                    document.getElementById("loader").style.display = "none"; // Hide loader once done
-                                    pdfContainer.style.display = "block"; // Show PDF container
-                                }
-                            }).catch(() => {
-                                showError();
-                            });
-                        });
+              // Render PDF page to canvas
+              page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
+                pageWrapper.appendChild(canvas);
+
+                // Create text layer
+                page.getTextContent().then(textContent => {
+                  const textLayerDiv = document.createElement("div");
+                  textLayerDiv.className = "textLayer";
+                  textLayerDiv.style.width = viewport.width + "px";
+                  textLayerDiv.style.height = viewport.height + "px";
+
+                  pdfjsLib.renderTextLayer({
+                    textContent: textContent,
+                    container: textLayerDiv,
+                    viewport: viewport,
+                    textDivs: []
+                  }).promise.then(() => {
+                    pageWrapper.appendChild(textLayerDiv);
+                    container.appendChild(pageWrapper);
+
+                    currentPage++;
+                    if (currentPage <= totalPages) {
+                      renderPage(currentPage);
+                    } else {
+                      document.getElementById("loader").style.display = "none";
+                      container.style.display = "block";
                     }
-
-                    // Start rendering from the first page
-                    renderPage(currentPage);
-                })
-                .catch(() => {
-                    showError();
+                  });
                 });
-        }
+              }).catch(showError);
+            });
+          }
 
-        function showError() {
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("errorMessage").style.display = "block";
-        }
-    </script>
+          renderPage(currentPage);
+        })
+        .catch(showError);
+    }
+
+    function showError() {
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("errorMessage").style.display = "block";
+    }
+  </script>
 
 </body>
 </html>
