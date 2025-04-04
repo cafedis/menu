@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cafedis Menu</title>
+  <title>Cafedis Menü</title>
 
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
@@ -15,22 +15,54 @@
       box-sizing: border-box;
     }
 
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
+    html, body {
+      height: 100%;
+      width: 100%;
+      background-color: #1c1c1c;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
-      height: 100vh;
-      width: 100vw;
+      color: #c08f64;
     }
 
-    #loader {
+    /* CAFEDIS Loader */
+    .cafedis-loader {
+      display: flex;
+      gap: 8px;
+      font-size: 48px;
+      font-weight: bold;
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 24px;
-      color: #333;
       z-index: 999;
+    }
+
+    .cafedis-loader span {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: bounceIn 0.6s forwards;
+    }
+
+    .cafedis-loader span:nth-child(1) { animation-delay: 0s; }
+    .cafedis-loader span:nth-child(2) { animation-delay: 0.1s; }
+    .cafedis-loader span:nth-child(3) { animation-delay: 0.2s; }
+    .cafedis-loader span:nth-child(4) { animation-delay: 0.3s; }
+    .cafedis-loader span:nth-child(5) { animation-delay: 0.4s; }
+    .cafedis-loader span:nth-child(6) { animation-delay: 0.5s; }
+    .cafedis-loader span:nth-child(7) { animation-delay: 0.6s; }
+
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+      }
+      60% {
+        opacity: 1;
+        transform: translateY(-10px) scale(1.05);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+      }
     }
 
     .pdf-container {
@@ -43,9 +75,9 @@
 
     .pdf-page {
       position: relative;
-      margin: 0 auto 16px;
+      margin: 16px auto;
       background: white;
-      box-shadow: 0 0 4px rgba(0,0,0,0.2);
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
 
     canvas {
@@ -81,12 +113,12 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: #333;
+      color: #ffd700;
       text-align: center;
     }
 
     .error-message a {
-      color: #007bff;
+      color: #ffcc00;
       text-decoration: none;
       font-weight: bold;
     }
@@ -98,21 +130,22 @@
 </head>
 <body>
 
-  <!-- Loader -->
-  <div id="loader">Yükleniyor...</div>
+  <!-- CAFEDIS Animated Loader -->
+  <div id="loader" class="cafedis-loader" aria-label="CAFEDİS yükleniyor">
+    <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
+  </div>
 
-  <!-- PDF Container -->
+  <!-- PDF Content -->
   <div class="pdf-container" id="pdfContainer"></div>
 
   <!-- Error Message -->
   <div class="error-message" id="errorMessage">
     <p>⚠️ PDF yüklenemedi.</p>
-    <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
+    <p><a href="menu.pdf" target="_blank" rel="noopener">Menüyü indirmek için tıklayın</a></p>
   </div>
 
   <script>
-    window.onload = function () {
-      document.getElementById("loader").style.display = "block";
+    window.onload = () => {
       loadPDF();
     };
 
@@ -125,41 +158,39 @@
           const totalPages = pdf.numPages;
           let currentPage = 1;
 
-          function renderPage(num) {
-            pdf.getPage(num).then(page => {
+          function renderPage(pageNum) {
+            pdf.getPage(pageNum).then(page => {
               const scale = window.innerWidth < 768 ? 1 : 1.5;
               const viewport = page.getViewport({ scale });
 
-              const pageWrapper = document.createElement("div");
-              pageWrapper.className = "pdf-page";
-              pageWrapper.style.width = viewport.width + "px";
-              pageWrapper.style.height = viewport.height + "px";
+              const wrapper = document.createElement("div");
+              wrapper.className = "pdf-page";
+              wrapper.style.width = viewport.width + "px";
+              wrapper.style.height = viewport.height + "px";
 
-              // Create canvas
               const canvas = document.createElement("canvas");
               canvas.width = viewport.width;
               canvas.height = viewport.height;
-              const context = canvas.getContext("2d");
 
-              // Render PDF page to canvas
-              page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
-                pageWrapper.appendChild(canvas);
+              const context = canvas.getContext('2d');
 
-                // Create text layer
+              page.render({ canvasContext: context, viewport }).promise.then(() => {
+                wrapper.appendChild(canvas);
+
                 page.getTextContent().then(textContent => {
-                  const textLayerDiv = document.createElement("div");
-                  textLayerDiv.className = "textLayer";
-                  textLayerDiv.style.width = viewport.width + "px";
-                  textLayerDiv.style.height = viewport.height + "px";
+                  const textLayer = document.createElement("div");
+                  textLayer.className = "textLayer";
+                  textLayer.style.width = viewport.width + "px";
+                  textLayer.style.height = viewport.height + "px";
 
                   pdfjsLib.renderTextLayer({
-                    textContent: textContent,
-                    container: textLayerDiv,
-                    viewport: viewport,
+                    textContent,
+                    container: textLayer,
+                    viewport,
                     textDivs: []
                   }).promise.then(() => {
-                    pageWrapper.appendChild(textLayerDiv);
-                    container.appendChild(pageWrapper);
+                    wrapper.appendChild(textLayer);
+                    container.appendChild(wrapper);
 
                     currentPage++;
                     if (currentPage <= totalPages) {
