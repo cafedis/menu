@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafedis Menu</title>
+
+    <!-- Preload PDF for Desktop -->
+    <link rel="preload" href="menu.pdf" as="document">
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Loader Styling */
+        #loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            color: #333;
+            z-index: 999;
+        }
+
+        .pdf-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: none;
+            overflow: auto;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Error message when PDF fails to load */
+        .error-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .error-message a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .error-message a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loader while PDF is loading -->
+    <div id="loader">Yükleniyor...</div>
+
+    <!-- PDF Container (Hidden initially) -->
+    <div class="pdf-container" id="pdfContainer"></div>
+
+    <!-- Error Message (Hidden by Default) -->
+    <div class="error-message" id="errorMessage">
+        <p>⚠️ Unable to load the PDF.</p>
+        <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
+    </div>
+
+    <script>
+        // Show the loader while the document is loading
+        window.onload = function() {
+            document.getElementById("loader").style.display = "block";
+            loadPDF();
+        };
+
+        // Load PDF using PDF.js
+        function loadPDF() {
+            const url = 'menu.pdf'; // Path to the PDF file
+            const pdfContainer = document.getElementById("pdfContainer");
+
+            // Fetch the PDF document
+            pdfjsLib.getDocument(url).promise
+                .then(pdf => {
+                    const totalPages = pdf.numPages;
+
+                    // Loop through each page and render it on a canvas
+                    let currentPage = 1;
+
+                    function renderPage(pageNum) {
+                        pdf.getPage(pageNum).then(page => {
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext('2d');
+                            const viewport = page.getViewport({ scale: 1.5 });
+
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+
+                            page.render({
+                                canvasContext: context,
+                                viewport: viewport
+                            }).promise.then(() => {
+                                pdfContainer.appendChild(canvas);
+                                currentPage++;
+                                if (currentPage <= totalPages) {
+                                    renderPage(currentPage);
+                                } else {
+                                    document.getElementById("loader").style.display = "none"; // Hide loader once done
+                                    pdfContainer.style.display = "block"; // Show PDF container
+                                }
+                            }).catch(() => {
+                                showError();
+                            });
+                        });
+                    }
+
+                    // Start rendering from the first page
+                    renderPage(currentPage);
+                })
+                .catch(() => {
+                    showError();
+                });
+        }
+
+        function showError() {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("errorMessage").style.display = "block";
+        }
+    </script>
+
+</body>
+</html>
