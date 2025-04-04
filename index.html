@@ -1,158 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cafedis Menu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafedis Menu</title>
 
-  <!-- Preload PDF for Desktop -->
-  <link rel="preload" href="menu.pdf" as="document">
+    <!-- Preload PDF for Desktop -->
+    <link rel="preload" href="menu.pdf" as="document">
 
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #f0f0f0;
-      overflow: hidden;
-      position: relative;
-    }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: relative;
+        }
 
-    #loader {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 24px;
-      font-family: Arial, sans-serif;
-      color: #333;
-      z-index: 999;
-    }
+        /* Loader Styling */
+        #loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            color: #333;
+            z-index: 999;
+        }
 
-    .pdf-container {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      display: none;
-      overflow: auto;
-      scroll-snap-type: y mandatory;
-    }
+        .pdf-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: none;
+            overflow: auto;
+        }
 
-    canvas {
-      width: 100%;
-      height: auto;
-      scroll-snap-align: start;
-      margin-bottom: 10px;
-    }
+        canvas {
+            width: 100%;
+            height: auto;
+        }
 
-    .error-message {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      font-size: 18px;
-      font-family: Arial, sans-serif;
-      color: #333;
-    }
+        /* Error message when PDF fails to load */
+        .error-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 18px;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
 
-    .error-message a {
-      color: #007bff;
-      text-decoration: none;
-      font-weight: bold;
-    }
+        .error-message a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-    .error-message a:hover {
-      text-decoration: underline;
-    }
-
-    .error-message button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-  </style>
+        .error-message a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
-  <div id="loader">Yükleniyor...</div>
+    <!-- Loader while PDF is loading -->
+    <div id="loader">Yükleniyor...</div>
 
-  <div class="pdf-container" id="pdfContainer"></div>
+    <!-- PDF Container (Hidden initially) -->
+    <div class="pdf-container" id="pdfContainer"></div>
 
-  <div class="error-message" id="errorMessage">
-    <p>⚠️ PDF yüklenemedi.</p>
-    <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
-    <button onclick="location.reload()">Yeniden Dene</button>
-  </div>
+    <!-- Error Message (Hidden by Default) -->
+    <div class="error-message" id="errorMessage">
+        <p>⚠️ Unable to load the PDF.</p>
+        <p><a href="menu.pdf" target="_blank">Menüyü indirmek için tıklayın</a></p>
+    </div>
 
-  <script>
-    window.onload = function() {
-      document.getElementById("loader").style.display = "block";
-      loadPDF();
-    };
+    <script>
+        // Show the loader while the document is loading
+        window.onload = function() {
+            document.getElementById("loader").style.display = "block";
+            loadPDF();
+        };
 
-    function loadPDF() {
-      const url = 'menu.pdf';
-      const pdfContainer = document.getElementById("pdfContainer");
+        // Load PDF using PDF.js
+        function loadPDF() {
+            const url = 'menu.pdf'; // Path to the PDF file
+            const pdfContainer = document.getElementById("pdfContainer");
 
-      pdfjsLib.getDocument(url).promise
-        .then(pdf => {
-          const totalPages = pdf.numPages;
-          let currentPage = 1;
+            // Fetch the PDF document
+            pdfjsLib.getDocument(url).promise
+                .then(pdf => {
+                    const totalPages = pdf.numPages;
 
-          function renderPage(pageNum) {
-            pdf.getPage(pageNum).then(page => {
-              const canvas = document.createElement("canvas");
-              const context = canvas.getContext('2d');
+                    // Loop through each page and render it on a canvas
+                    let currentPage = 1;
 
-              const scale = window.innerWidth < 768 ? 1 : 1.5;
-              const viewport = page.getViewport({ scale });
+                    function renderPage(pageNum) {
+                        pdf.getPage(pageNum).then(page => {
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext('2d');
+                            const viewport = page.getViewport({ scale: 1.5 });
 
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
 
-              page.render({
-                canvasContext: context,
-                viewport: viewport
-              }).promise.then(() => {
-                pdfContainer.appendChild(canvas);
-                currentPage++;
-                if (currentPage <= totalPages) {
-                  renderPage(currentPage);
-                } else {
-                  document.getElementById("loader").style.display = "none";
-                  pdfContainer.style.display = "block";
-                }
-              }).catch(() => {
-                showError();
-              });
-            });
-          }
+                            page.render({
+                                canvasContext: context,
+                                viewport: viewport
+                            }).promise.then(() => {
+                                pdfContainer.appendChild(canvas);
+                                currentPage++;
+                                if (currentPage <= totalPages) {
+                                    renderPage(currentPage);
+                                } else {
+                                    document.getElementById("loader").style.display = "none"; // Hide loader once done
+                                    pdfContainer.style.display = "block"; // Show PDF container
+                                }
+                            }).catch(() => {
+                                showError();
+                            });
+                        });
+                    }
 
-          renderPage(currentPage);
-        })
-        .catch(() => {
-          showError();
-        });
-    }
+                    // Start rendering from the first page
+                    renderPage(currentPage);
+                })
+                .catch(() => {
+                    showError();
+                });
+        }
 
-    function showError() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("errorMessage").style.display = "block";
-    }
-  </script>
+        function showError() {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("errorMessage").style.display = "block";
+        }
+    </script>
 
 </body>
 </html>
