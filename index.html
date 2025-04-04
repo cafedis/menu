@@ -104,13 +104,18 @@
     <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
   </div>
 
-  <!-- Native PDF Viewer -->
-  <iframe id="pdfFrame" class="pdf-frame" src="menu.pdf#toolbar=0&navpanes=0&scrollbar=0"></iframe>
+  <!-- Native PDF Viewer (attempt both mobile + desktop) -->
+  <iframe
+    id="pdfFrame"
+    class="pdf-frame"
+    src="menu.pdf#toolbar=1&navpanes=0&scrollbar=1"
+    allowfullscreen
+  ></iframe>
 
-  <!-- Error Fallback -->
+  <!-- Fallback for devices that block inline PDFs -->
   <div class="error-message" id="errorMessage">
-    <p>⚠️ PDF görüntülenemedi.</p>
-    <p><a href="menu.pdf" target="_blank" rel="noopener">Menüyü indirmek için buraya tıklayın</a></p>
+    <p>⚠️ PDF görüntülenemedi veya desteklenmiyor.</p>
+    <p><a href="menu.pdf" target="_blank" rel="noopener">Menüyü açmak veya indirmek için buraya tıklayın</a></p>
   </div>
 
   <script>
@@ -118,24 +123,34 @@
     const frame = document.getElementById("pdfFrame");
     const errorMessage = document.getElementById("errorMessage");
 
+    // Try loading PDF
     frame.onload = () => {
       loader.style.display = "none";
       frame.style.display = "block";
     };
 
+    // In case PDF fails to load
     frame.onerror = () => {
       loader.style.display = "none";
       errorMessage.style.display = "block";
     };
 
-    // Extra fallback if iframe is empty
+    // Extra fallback check: if iframe stays empty (iOS or blocked)
     setTimeout(() => {
-      if (!frame.contentDocument || frame.contentDocument.body.innerHTML.trim() === "") {
+      try {
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        if (!doc || !doc.body || doc.body.innerHTML.trim() === "") {
+          loader.style.display = "none";
+          frame.style.display = "none";
+          errorMessage.style.display = "block";
+        }
+      } catch (e) {
+        // Cross-origin fallback (some mobile devices)
         loader.style.display = "none";
         frame.style.display = "none";
         errorMessage.style.display = "block";
       }
-    }, 4000);
+    }, 4000); // wait max 4s
   </script>
 
 </body>
