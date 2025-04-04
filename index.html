@@ -1,35 +1,30 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cafedis Menü</title>
 
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 
   <style>
-    * {
+    html, body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      width: 100%;
       background-color: #1c1c1c;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100%;
       overflow: hidden;
-      color: #c08f64;
     }
 
-    /* CAFEDIS Loader */
+    /* Loader */
     .cafedis-loader {
       display: flex;
       gap: 8px;
       font-size: 48px;
       font-weight: bold;
+      color: #c08f64;
       position: absolute;
       top: 50%;
       left: 50%;
@@ -74,37 +69,15 @@
     }
 
     .pdf-page {
-      position: relative;
       margin: 16px auto;
       background: white;
       box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
 
     canvas {
-      display: block;
       width: 100%;
       height: auto;
-    }
-
-    .textLayer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      color: transparent;
-      font-family: sans-serif;
-      line-height: 1;
-      white-space: pre;
-      pointer-events: none;
-    }
-
-    .textLayer span {
-      position: absolute;
-      white-space: pre;
-      transform-origin: 0 0;
-      line-height: 1;
-      color: #000 !important;
+      display: block;
     }
 
     .error-message {
@@ -135,7 +108,7 @@
     <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
   </div>
 
-  <!-- PDF Content -->
+  <!-- PDF Canvas Pages -->
   <div class="pdf-container" id="pdfContainer"></div>
 
   <!-- Error Message -->
@@ -160,47 +133,39 @@
 
           function renderPage(pageNum) {
             pdf.getPage(pageNum).then(page => {
-              const scale = window.innerWidth < 768 ? 1 : 1.5;
+              const scale = window.innerWidth < 768 ? 1.2 : 1.5;
+              const outputScale = window.devicePixelRatio || 1;
               const viewport = page.getViewport({ scale });
 
-              const wrapper = document.createElement("div");
-              wrapper.className = "pdf-page";
-              wrapper.style.width = viewport.width + "px";
-              wrapper.style.height = viewport.height + "px";
-
               const canvas = document.createElement("canvas");
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
+              const context = canvas.getContext("2d");
 
-              const context = canvas.getContext('2d');
+              canvas.width = viewport.width * outputScale;
+              canvas.height = viewport.height * outputScale;
+              canvas.style.width = `${viewport.width}px`;
+              canvas.style.height = `${viewport.height}px`;
 
-              page.render({ canvasContext: context, viewport }).promise.then(() => {
+              const transform = outputScale !== 1
+                ? [outputScale, 0, 0, outputScale, 0, 0]
+                : null;
+
+              page.render({
+                canvasContext: context,
+                viewport: viewport,
+                transform: transform
+              }).promise.then(() => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "pdf-page";
                 wrapper.appendChild(canvas);
+                container.appendChild(wrapper);
 
-                page.getTextContent().then(textContent => {
-                  const textLayer = document.createElement("div");
-                  textLayer.className = "textLayer";
-                  textLayer.style.width = viewport.width + "px";
-                  textLayer.style.height = viewport.height + "px";
-
-                  pdfjsLib.renderTextLayer({
-                    textContent,
-                    container: textLayer,
-                    viewport,
-                    textDivs: []
-                  }).promise.then(() => {
-                    wrapper.appendChild(textLayer);
-                    container.appendChild(wrapper);
-
-                    currentPage++;
-                    if (currentPage <= totalPages) {
-                      renderPage(currentPage);
-                    } else {
-                      document.getElementById("loader").style.display = "none";
-                      container.style.display = "block";
-                    }
-                  });
-                });
+                currentPage++;
+                if (currentPage <= totalPages) {
+                  renderPage(currentPage);
+                } else {
+                  document.getElementById("loader").style.display = "none";
+                  container.style.display = "block";
+                }
               }).catch(showError);
             });
           }
