@@ -56,11 +56,6 @@
         stroke-dashoffset: 0;
       }
     }
-    @keyframes fillIn {
-      to {
-        fill: #c08f64;
-      }
-    }
     .error-message {
       display: none;
       position: absolute;
@@ -94,7 +89,8 @@
       stroke-width: 2.5;
       stroke-dasharray: 3000;
       stroke-dashoffset: 3000;
-      animation: drawPath 2.8s ease-out forwards, fillIn 1s ease forwards 2.8s;
+      animation: drawPath 2.8s ease-out forwards;
+      transition: fill 2s ease-out;
     }
 
       .cls-2 {
@@ -124,6 +120,13 @@
 
   <script>
     window.onload = () => {
+      // Delay fill after stroke animation
+      setTimeout(() => {
+        document.querySelectorAll('.cls-1').forEach(el => {
+          el.style.fill = '#c08f64';
+        });
+      }, 2800);
+
       loadPDF();
     };
 
