@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cafedis Menü</title>
-
-  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-
   <style>
     html, body {
       margin: 0;
@@ -18,8 +15,6 @@
       height: 100%;
       overflow: hidden;
     }
-
-    /* Fullscreen container */
     .pdf-container {
       width: 100vw;
       height: 100vh;
@@ -29,61 +24,37 @@
       left: 0;
       display: none;
     }
-
     .pdf-page {
       background: white;
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
       margin: 0 auto 16px;
     }
-
     canvas {
       display: block;
       width: 100% !important;
       height: auto !important;
     }
-
-    /* CAFEDIS Loader */
-    .cafedis-loader {
+    .cafedis-svg-loader {
       display: flex;
-      gap: 8px;
-      font-size: 48px;
-      font-weight: bold;
-      color: #c08f64;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      background-color: #1c1c1c;
       z-index: 999;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
-
-    .cafedis-loader span {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: bounceIn 0.6s forwards;
+    .cafedis-svg-loader svg {
+      width: 60%;
+      height: auto;
     }
-
-    .cafedis-loader span:nth-child(1) { animation-delay: 0s; }
-    .cafedis-loader span:nth-child(2) { animation-delay: 0.1s; }
-    .cafedis-loader span:nth-child(3) { animation-delay: 0.2s; }
-    .cafedis-loader span:nth-child(4) { animation-delay: 0.3s; }
-    .cafedis-loader span:nth-child(5) { animation-delay: 0.4s; }
-    .cafedis-loader span:nth-child(6) { animation-delay: 0.5s; }
-    .cafedis-loader span:nth-child(7) { animation-delay: 0.6s; }
-
-    @keyframes bounceIn {
-      0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.8);
-      }
-      60% {
-        opacity: 1;
-        transform: translateY(-10px) scale(1.05);
-      }
-      100% {
-        transform: translateY(0) scale(1);
+    @keyframes drawPath {
+      to {
+        stroke-dashoffset: 0;
       }
     }
-
     .error-message {
       display: none;
       position: absolute;
@@ -94,13 +65,11 @@
       text-align: center;
       z-index: 20;
     }
-
     .error-message a {
       color: #ffcc00;
       text-decoration: none;
       font-weight: bold;
     }
-
     .error-message a:hover {
       text-decoration: underline;
     }
@@ -108,9 +77,28 @@
 </head>
 <body>
 
-  <!-- CAFEDIS Loader -->
-  <div id="loader" class="cafedis-loader" aria-label="CAFEDİS yükleniyor">
-    <span>C</span><span>A</span><span>F</span><span>E</span><span>D</span><span>İ</span><span>S</span>
+  <!-- CAFEDIS SVG Loader -->
+  <div id="loader" class="cafedis-svg-loader" aria-label="CAFEDİS yükleniyor">
+    <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1279.11 290">
+  <defs>
+    <style>
+      .cls-1 { fill: none; stroke: #c08f64; stroke-width: 2.5; stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: drawPath 2.5s ease-out forwards;
+      }
+
+      .cls-2 {
+        fill: #fcfdfd;
+      }
+    </style>
+  </defs>
+  <path class="cls-1" d="M.51,126.17c.04-1.45.3-3.73.62-5.6C13.61,48.59,64.32-.98,140.6,6.01c27.66,2.54,61.1,16.15,77.52,39.48,1.2,1.7,2.93,5.03,2.89,7.03-.09,3.7-12,22.95-14.91,26.96-10.95,15.11-11.6,6.1-21.97-3-21.14-18.55-37.2-26.83-66.55-24.52-92.03,7.25-93.57,183.19,1.16,191.91,23.45,2.16,45.87-7.13,63.6-21.86,3.15-2.62,13.03-14.38,16.22-14.06,4.3.42,19.91,25.03,23.81,29.31,2.41,5.11-5.52,12.42-9.19,16.29-15.88,16.75-39.74,30.64-62.64,34.43-1.88.31-4-1.12-3.43,2.02h-44c.57-3.16-1.56-1.7-3.43-2.03C45.46,278.41,6.27,228.03,1.07,174.49c-.18-1.89-.48-4.32-.56-6.23l-.51-7.26v-3.17l.38-26.47-.04-2.51.17-2.68Z"/>
+  <path class="cls-1" d="M310.11,290c.55-3.15-1.58-1.8-3.48-1.97-64.37-6.02-89.18-93.98-63.4-146.41,21.54-43.79,77.16-65.45,120.9-40.14,10.73,6.21,13.47,12.82,21.45,19.55,2.75,2.31,3.48,3.69,4.78-.23,1.71-5.14,2.56-20.4,7.48-21.66,1.73-.44,13.65,1.62,16.47,2.15,3.19.6,17.3,3.69,18.31,5.69.4.79.55,1.64.58,2.51-3.13,26.48-8.76,54.27-8.08,80.99.63,24.51,4.28,49.47,5.03,73.97.09,3.02.43,17.16-.5,18.58-1.88,2.84-11.76,1.64-15.03,1.97-7.73.8-15.48,2.83-23.3,1.77-2.62-1.5-5.52-21.59-6.21-25.79-2.48-2.47-13.65,8.78-16.06,10.45-11.65,8.08-21.58,13.57-35.63,16.42-1.84.37-3.9-.89-3.31,2.14h-20ZM366.76,233.65c28.18-28.55,19.93-89.66-20.68-101.12-53.63-15.14-86.97,51.05-57.94,92.94,18.7,26.99,54.98,32.13,78.62,8.18Z"/>
+  <path class="cls-1" d="M542.11,0c.95,1.61,4.99,1.64,6,0h11c-.23,8.42,8.16,29.39,5.86,36.36-.46,1.4-1.15,1.36-2.38,1.61-12.39,2.52-23.07-.58-34.21,7.72-8.09,6.03-10.64,25.09-11.25,34.81-.23,3.62-.71,15-.05,17.8.14.6,2.2,1.69,2.54,1.69h39c.28,0,2.73,1.55,3,2,.11,5.22,3.34,35.63.56,37.56-3.91,2.72-42.13-2.5-44.07-.57l1.08,144.34c-.99,1.55-3.86,1.57-5.54,1.71-7.39.6-26.1.97-32.98-.11-3.6-.57-4.69-2.22-5.32-5.68l-.26-134.74c-1.5-7.84-18.9-2.72-24.79-5.71-.67-2.02-1.08-4.13-1.23-6.28-.28-4.04-.65-24.39.2-26.88,1.46-4.25,19.36-4.73,23.84-4.66.38-18.77-1.83-38.14,4.32-56.18,8.6-25.26,33.5-37.88,58.24-42.81,1.83-.37,4.01,1.19,3.44-2.02h3Z"/>
+  <path class="cls-1" d="M1279.11,202v27l-7.81,17.69c-14.06,24.42-49.63,36.64-76.73,34.34-14.38-1.22-9.38-8.87-10.48-19.52-.48-4.69-3.97-16.44-1.08-20.11,2.59-3.29,16.78-.26,21.59-.42,11.36-.36,29.75-4.61,32.27-17.73,2.25-11.71-3.42-18.01-12.28-24.25-18.32-12.9-41.24-16.19-49.17-40.83-13.1-40.73,17.81-74.67,57.3-79.06,2.11-.23,16.54-1.01,17.34-.66,1.31.57,2.95,3.15,3.54,4.54,1.85,4.33,4.86,16,6.01,20.99.62,2.73,2.54,10.02,1.05,12.08-1.13,1.58-26.22,3.75-30.95,5.04-9.57,2.61-15.8,9.69-13.4,20.18s37.88,25.29,47.33,34.66c7.53,7.46,10.89,16.8,15.45,26.05Z"/>
+  <path class="cls-2" d="M548.11,0c-1.01,1.64-5.05,1.61-6,0h6Z"/>
+  <path class="cls-1" d="M992.11,8v87.5c0,1.07-1.76,1.45-3.06,1.08-3.36-.95-12.94-9.92-17.61-12.41-24.05-12.8-55.96-13.63-81.02-3.37-24.63,10.09-55.86,47.65-73.82,68.18-24.7,28.23-64.66,86.65-102.26,93.74-35.66,6.72-75.6-17.94-73.17-56.67l127.28-1.22c6.83-10.6,17.1-18.44,24.64-28.36,7.66-10.09,7.02-11.07,2.22-23.17-32.71-82.45-156.03-77.8-187.67,4.72-40.32,105.18,82.63,189.01,168.49,112.49,39.45-35.16,90.45-115.56,133.63-135.37,48.57-22.29,89.32,29.57,83.12,76.12-5.74,43.13-59.43,66.3-95.89,44.36-20.42-12.29-30.47-34.88-34.39-57.64-5.71-.11-25.03,26.24-29.81,31.25-2.73,7.11,7.67,23.54,11.93,29.66,24.21,34.71,76.09,49.32,115.92,36.14,10.32-3.41,17.91-8.99,25.94-16.04,2.85,1.52,6.05,15.77,7.14,16.07,8.96.14,17.98-.38,26.93-.11,1.79.06,9.46,2.4,9.46-.46V8h-38ZM719.12,112.49c18.34,4.31,37.81,19.28,40.99,38.51h-114c6.21-32,43.63-45.41,73.01-38.51Z"/>
+  <path class="cls-1" d="M1091.25,88.14c9.78-2.34,20.08,1.19,30.4.9,4.86-.14,17.15-3.12,20.82-1.9.79.26,1.3.66,1.5,1.5-.03,15.27-.23,30.65-.82,45.9-1.58,40.66-1.81,78.28-1,118.92.09,4.56,1.32,23.03-2.71,24.38-6.71-.76-39.59,1.93-42.94-.73-3.62-2.88-2.53-30.47-2.44-36.64.28-20.12,2.76-40.76,2.08-61-.61-18.24-3.21-36.68-4.08-54.92-.58-12.06-.47-24.33-.82-36.4Z"/>
+  <path class="cls-1" d="M1111.85,11.24c22.65-3.55,39.77,12.56,32.47,35.47-4.44,13.93-20.85,15.73-33.6,14.18-29.78-3.63-26.23-45.37,1.13-49.65Z"/>
+</svg>
   </div>
 
   <!-- PDF Display Container -->
@@ -139,14 +127,10 @@
           function renderPage(pageNum) {
             pdf.getPage(pageNum).then(page => {
               const outputScale = window.devicePixelRatio || 1;
-
-              // Calculate scale to fit screen width
               const unscaled = page.getViewport({ scale: 1 });
               const availableWidth = window.innerWidth;
               const scale = availableWidth / unscaled.width;
-
               const viewport = page.getViewport({ scale });
-
               const canvas = document.createElement("canvas");
               const context = canvas.getContext("2d");
 
